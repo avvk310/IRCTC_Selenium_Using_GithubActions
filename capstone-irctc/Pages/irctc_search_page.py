@@ -56,11 +56,13 @@ class IRCTCSearchPage:
             backdrops.forEach(b => b.style.display = 'none');
         """)
 
+        # ⚠️ FULL fallback list including CI locator
         fallback_locators = [
-            "//input[@aria-controls='pr_id_1_list']",
-            "//input[contains(@placeholder,'From')]",
-            "//input[contains(@aria-label,'From')]",
-            "//input[@type='text' and contains(@class,'ui-inputtext')]",
+            "//input[@id='origin']",  # GitHub Actions layout
+            "//input[@aria-controls='pr_id_1_list']",  # Normal IRCTC layout
+            "//input[contains(@placeholder,'From')]",  # Alternate layout
+            "//input[contains(@aria-label,'From')]",  # Mobile layout
+            "//input[@type='text' and contains(@class,'ui-inputtext')]"  # Generic fallback
         ]
 
         field = None
@@ -96,7 +98,7 @@ class IRCTCSearchPage:
             """, field, short_code)
             time.sleep(2)
 
-        # Select option
+        # Select option from dropdown
         options = self.driver.find_elements(By.XPATH, "//ul[contains(@id,'pr_id')]/li/span")
         for opt in options:
             if full_name in opt.text:
