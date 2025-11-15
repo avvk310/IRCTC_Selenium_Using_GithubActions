@@ -1,10 +1,11 @@
 import pytest
 import time
-import Pages.irctc_search_page
+from Pages.irctc_search_page import IRCTCSearchPage   # ← REQUIRED
 from Utilities.excel_reader import ExcelReader
 from Utilities.screenshot_helper import take_screenshot
 import allure
 import os
+
 # Load Excel data
 excel_path = "capstone-irctc/TestData/TestData.xlsx"
 excel = ExcelReader(excel_path)
