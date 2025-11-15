@@ -6,9 +6,10 @@ from Utilities.screenshot_helper import take_screenshot
 import allure
 import os
 # Load Excel data
-excel_path = os.path.join(os.getcwd(), "TestData", "TestData.xlsx")
+excel_path = "capstone-irctc/TestData/TestData.xlsx"
 excel = ExcelReader(excel_path)
 bus_data = excel.get_data("Sheet1")
+
 
 @pytest.mark.usefixtures("setup")
 class TestIRCTCSearch:
