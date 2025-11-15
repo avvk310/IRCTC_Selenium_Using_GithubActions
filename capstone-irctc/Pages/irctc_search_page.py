@@ -50,20 +50,31 @@ class IRCTCSearchPage:
 
         self.handle_popups()
 
-        # remove overlays
+        # STEP 1: Detect IRCTC iframe in CI
+        try:
+            iframe = self.wait.until(
+                EC.presence_of_element_located((By.XPATH, "//iframe[contains(@title,'IRCTC')]"))
+            )
+            self.driver.switch_to.frame(iframe)
+            print("Switched to IRCTC iframe")
+        except:
+            print("No iframe found — continuing normally")
+
+        # STEP 2: Remove Angular overlays
         self.driver.execute_script("""
             document.querySelectorAll('.cdk-overlay-backdrop')
             .forEach(e => e.style.display='none');
         """)
 
-        # ALL possible locators
+        # STEP 3: Try all possible locators inside iframe
         fallback_locators = [
             "//input[@id='origin']",
             "//input[@id='input-from']",
             "//input[@formcontrolname='origin']",
+            "//input[@aria-controls='pr_id_1_list']",
             "//input[contains(@placeholder,'From')]",
             "//input[contains(@aria-label,'From')]",
-            "//input[contains(@class,'ng-tns') and contains(@class,'ui-inputtext')]",
+            "//input[contains(@class,'ui-inputtext')]",
             "//input[@type='text']"
         ]
 
@@ -72,7 +83,7 @@ class IRCTCSearchPage:
         for xpath in fallback_locators:
             try:
                 field = self.wait.until(
-                    EC.presence_of_element_located((By.XPATH, xpath))
+                    EC.element_to_be_clickable((By.XPATH, xpath))
                 )
                 self.driver.execute_script(
                     "arguments[0].scrollIntoView({block:'center'});", field
@@ -89,24 +100,12 @@ class IRCTCSearchPage:
             self.driver.save_screenshot("/tmp/irctc_debug_from_input.png")
             raise TimeoutException("FROM CITY field not found")
 
-        # Type short code using JS (works 100% on CI)
-        self.driver.execute_script("""
-            arguments[0].value = arguments[1];
-            arguments[0].dispatchEvent(new Event('input', {bubbles:true}));
-        """, field, short_code)
-
+        # STEP 4: Type search value
+        field.clear()
+        field.send_keys(short_code)
         time.sleep(2)
 
-        # Select from dropdown
-        options = self.driver.find_elements(By.XPATH, "//li//span")
-        for opt in options:
-            if full_name.strip().upper() in opt.text.upper():
-                self.driver.execute_script("arguments[0].click();", opt)
-                print("From city selected:", opt.text)
-                break
-
-        time.sleep(1)
-        self.handle_popups()
+        # STEP 5: Select dropdown option
 
     def enter_to_city(self, short_code, full_name):
         self.handle_popups()
