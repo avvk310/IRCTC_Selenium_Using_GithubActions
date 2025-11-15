@@ -2,48 +2,65 @@ name: run-selenium-tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
-  selenium-test-job:
+  test:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # Install Python
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: "3.10"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    # Install Chrome
+    # Install Google Chrome
     - name: Install Google Chrome
       run: |
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
 
-    # Install ChromeDriver matching Chrome
+    # Install ChromeDriver matching Chrome version
     - name: Install ChromeDriver
-      uses: nanasess/setup-chromedriver@v2
+      run: |
+        CHROME_VERSION=$(google-chrome --version | sed 's/[^0-9.]//g' | cut -d '.' -f 1)
+        wget -N https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}
+        DRIVER_VERSION=$(cat LATEST_RELEASE_${CHROME_VERSION})
+        wget -N https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip
+        unzip chromedriver_linux64.zip
+        sudo mv chromedriver /usr/bin/chromedriver
+        sudo chmod +x /usr/bin/chromedriver
 
-    # Start virtual display and export DISPLAY
+    # Install Python dependencies
+    - name: Install pip packages
+      run: |
+        pip install --upgrade pip
+        pip install selenium pytest openpyxl pytest-html allure-pytest
+
+    # Start virtual display
     - name: Start Xvfb
       run: |
         sudo Xvfb :99 -ac &
-        export DISPLAY=:99
-        echo "DISPLAY set to :99"
+        echo "DISPLAY=:99" >> $GITHUB_ENV
 
-    # Run tests
-    - name: Run Pytest
-      env:
-        DISPLAY: :99
+    # Run pytest tests
+    - name: Run tests
       run: |
         pytest --maxfail=1 --disable-warnings -q
+
+    # Upload debug files if failure happens
+    - name: Upload debug artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: irctc-debug-files
+        path: |
+          /tmp/irctc_debug_from_input.html
+          /tmp/irctc_debug_from_input.png
+        if-no-files-found: warn
