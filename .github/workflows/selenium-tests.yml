@@ -1,0 +1,39 @@
+name: Selenium Test Execution
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  run-selenium-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Chrome Browser
+      uses: browser-actions/setup-chrome@v1
+
+    - name: Install Chrome Driver
+      uses: nanasess/setup-chromedriver@v2
+
+    - name: Run Selenium Tests
+      env:
+        DISPLAY: :99
+      run: |
+        sudo Xvfb :99 -ac &
+        pytest -v --disable-warnings --maxfail=1

@@ -1,0 +1,18 @@
+
+ Searching trains from 'HYDERABAD DECAN - HYB' to 'PUNE JN - PUNE' | Class: Sleeper | Quota: LADIES
+ Modal OK handled
+ From city selected: HYDERABAD DECAN - HYB (SECUNDERABAD)
+TELANGANA
+ To city selected: PUNE JN - PUNE (PUNE)
+MAHARASHTRA
+Train class selected: Sleeper
+ Quota selected: LADIES
+ Search button clicked
+📸 Screenshot saved: C:\Users\femina\PycharmProjects\capstone-irctc\Reports\screenshots\HYDERABAD_to_PUNE_20251023_130942.png
+ Total trains: 6
+1. HUSSAINSAGAR SF (12702)
+2. COA BVC SF EXP (12755)
+3. MUMBAI SF EXP (22731)
+4. VSKP LTT EXPRES (18519)
+5. KONARK EXPRESS (11020)
+6. KZJ HDP EXPRESS (17014)
