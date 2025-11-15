@@ -50,60 +50,66 @@ class IRCTCSearchPage:
 
         self.handle_popups()
 
-        # Remove Angular overlays
+        # Remove Angular overlays (very important for CI)
         self.driver.execute_script("""
-            const backdrops = document.querySelectorAll('.cdk-overlay-backdrop');
-            backdrops.forEach(b => b.style.display = 'none');
+            document.querySelectorAll('.cdk-overlay-backdrop')
+            .forEach(e => e.style.display='none');
         """)
 
-        # ⚠️ FULL fallback list including CI locator
+        # --- FULL LIST FOR ALL IRCTC LAYOUTS (Local + CI) ---
         fallback_locators = [
-            "//input[@id='origin']",  # GitHub Actions layout
-            "//input[@aria-controls='pr_id_1_list']",  # Normal IRCTC layout
-            "//input[contains(@placeholder,'From')]",  # Alternate layout
-            "//input[contains(@aria-label,'From')]",  # Mobile layout
-            "//input[@type='text' and contains(@class,'ui-inputtext')]"  # Generic fallback
+            "//input[@id='input-from']",  # CI version
+            "//input[@formcontrolname='origin']",  # CI alt
+            "//input[@id='origin']",  # mobile UI
+            "//input[@aria-controls='pr_id_1_list']",  # normal UI
+            "//input[contains(@placeholder,'From')]",  # fallback
+            "//input[contains(@aria-label,'From')]",  # fallback
+            "//input[@type='text' and contains(@class,'ui-inputtext')]"  # last fallback
         ]
 
         field = None
+
         for xpath in fallback_locators:
             try:
-                field = self.wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
-                # bring into view
-                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field)
-                time.sleep(0.5)
+                field = self.wait.until(
+                    EC.element_to_be_clickable((By.XPATH, xpath))
+                )
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});", field
+                )
+                time.sleep(1)
                 break
-            except:
+            except Exception:
                 field = None
                 continue
 
         if not field:
-            # DEBUG: capture page source for analysis
+            # DEBUG files for GitHub
             with open("/tmp/irctc_debug_from_input.html", "w", encoding="utf-8") as f:
                 f.write(self.driver.page_source)
             self.driver.save_screenshot("/tmp/irctc_debug_from_input.png")
-            raise TimeoutException("From city input field not found in CI environment.")
+            raise TimeoutException("From city input field not found (CI mode).")
 
-        # Type short code
+        # --- TYPE SHORT CODE ---
         try:
             field.click()
             field.clear()
             field.send_keys(short_code)
             time.sleep(2)
-        except:
-            # fallback send via JS
+        except Exception:
+            # If typing fails → use JS
             self.driver.execute_script("""
                 arguments[0].value = arguments[1];
                 arguments[0].dispatchEvent(new Event('input', {bubbles:true}));
             """, field, short_code)
             time.sleep(2)
 
-        # Select option from dropdown
-        options = self.driver.find_elements(By.XPATH, "//ul[contains(@id,'pr_id')]/li/span")
+        # --- SELECT DROPDOWN RESULT ---
+        options = self.driver.find_elements(By.XPATH, "//li//span")
         for opt in options:
             if full_name in opt.text:
                 opt.click()
-                print(f" From city selected: {opt.text}")
+                print("From city selected:", opt.text)
                 break
 
         self.handle_popups()
