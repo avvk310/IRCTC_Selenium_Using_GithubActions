@@ -1,10 +1,11 @@
 import pytest
 import time
-from Pages.irctc_search_page import IRCTCSearchPage   # ✅ REQUIRED
+from Pages.irctc_search_page import IRCTCSearchPage   # REQUIRED
 from Utilities.excel_reader import ExcelReader
 from Utilities.screenshot_helper import take_screenshot
-import allure
 import os
+import allure
+
 
 class IRCTCSearchPage:
     def __init__(self, driver, wait):
