@@ -14,53 +14,49 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Install Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.10"
 
-    # Install Google Chrome
     - name: Install Google Chrome
       run: |
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
 
-    # Install ChromeDriver matching Chrome version
-    - name: Install ChromeDriver
+    - name: Install ChromeDriver (Chrome for Testing)
       run: |
-        CHROME_VERSION=$(google-chrome --version | sed 's/[^0-9.]//g' | cut -d '.' -f 1)
-        wget -N https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}
-        DRIVER_VERSION=$(cat LATEST_RELEASE_${CHROME_VERSION})
-        wget -N https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip
-        unzip chromedriver_linux64.zip
-        sudo mv chromedriver /usr/bin/chromedriver
+        CHROME_VERSION=$(google-chrome --version | sed 's/[^0-9.]//g')
+        echo "Detected Chrome version: $CHROME_VERSION"
+
+        DRIVER_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_VERSION/linux64/chromedriver-linux64.zip"
+
+        echo "Downloading ChromeDriver from: $DRIVER_URL"
+        wget -N $DRIVER_URL -O chromedriver.zip
+
+        unzip chromedriver.zip
+        sudo mv chromedriver-linux64/chromedriver /usr/bin/chromedriver
         sudo chmod +x /usr/bin/chromedriver
 
-    # Install Python dependencies
     - name: Install pip packages
       run: |
         pip install --upgrade pip
         pip install selenium pytest openpyxl pytest-html allure-pytest
 
-    # Start virtual display
     - name: Start Xvfb
       run: |
         sudo Xvfb :99 -ac &
         echo "DISPLAY=:99" >> $GITHUB_ENV
 
-    # Run pytest tests
     - name: Run tests
       run: |
         pytest --maxfail=1 --disable-warnings -q
 
-    # Upload debug files if failure happens
     - name: Upload debug artifacts
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: irctc-debug-files
+        name: irctc-debug
         path: |
-          /tmp/irctc_debug_from_input.html
-          /tmp/irctc_debug_from_input.png
-        if-no-files-found: warn
+          /tmp/*.html
+          /tmp/*.png
