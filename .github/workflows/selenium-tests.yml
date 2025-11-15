@@ -24,16 +24,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
 
-    - name: Install ChromeDriver (Chrome for Testing)
+    - name: Install ChromeDriver
       run: |
         CHROME_VERSION=$(google-chrome --version | sed 's/[^0-9.]//g')
         echo "Detected Chrome version: $CHROME_VERSION"
 
         DRIVER_URL="https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_VERSION/linux64/chromedriver-linux64.zip"
 
-        echo "Downloading ChromeDriver from: $DRIVER_URL"
         wget -N $DRIVER_URL -O chromedriver.zip
-
         unzip chromedriver.zip
         sudo mv chromedriver-linux64/chromedriver /usr/bin/chromedriver
         sudo chmod +x /usr/bin/chromedriver
@@ -43,14 +41,12 @@ jobs:
         pip install --upgrade pip
         pip install selenium pytest openpyxl pytest-html allure-pytest
 
-    - name: Start Xvfb
-      run: |
-        sudo Xvfb :99 -ac &
-        echo "DISPLAY=:99" >> $GITHUB_ENV
+    # ❌ Removed old Xvfb step
+    # ✔ Use xvfb-run instead
 
-    - name: Run tests
+    - name: Run tests using xvfb-run
       run: |
-        pytest --maxfail=1 --disable-warnings -q
+        xvfb-run -a python -m pytest --maxfail=1 --disable-warnings -q
 
     - name: Upload debug artifacts
       if: failure()
