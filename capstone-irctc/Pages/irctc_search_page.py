@@ -1,7 +1,10 @@
+import pytest
 import time
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoAlertPresentException
+from Pages.irctc_search_page import IRCTCSearchPage   # ✅ REQUIRED
+from Utilities.excel_reader import ExcelReader
+from Utilities.screenshot_helper import take_screenshot
+import allure
+import os
 
 class IRCTCSearchPage:
     def __init__(self, driver, wait):
