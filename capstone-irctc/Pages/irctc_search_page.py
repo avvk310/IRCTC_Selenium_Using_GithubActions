@@ -11,37 +11,51 @@ class IRCTCSearchPage:
         self.wait = wait
 
     def handle_popups(self):
-        handlers = [
-            ("//a[contains(@class,'fa fa-times')]", "Login popup closed"),
-            ("//div[contains(@class,'ui-dialog')]//span[contains(@class,'ui-icon-closethick')]", "Promo popup closed"),
-            ("//span[contains(text(),'Remove') or contains(text(),'REMOVE')]", "Remove popup closed"),
-            ("//button[text()='OK']", "Modal OK handled"),
+        popup_xpaths = [
+            "//button[contains(text(),'OK')]",
+            "//span[contains(text(),'OK')]/parent::button",
+            "//a[contains(@class,'fa fa-times')]",
+            "//span[contains(@class,'ui-icon-closethick')]",
+            "//div[contains(@class,'ui-dialog')]//button",
+            "//button[contains(text(),'Dismiss')]",
+            "//button[contains(text(),'close') or contains(text(),'Close')]",
+            "//span[contains(text(),'×')]",
+            "//div[@role='dialog']//button",
         ]
-        for xpath, msg in handlers:
+
+        for xpath in popup_xpaths:
             try:
                 btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
-                btn.click()
-                print(f" {msg}")
-                return True
-            except TimeoutException:
+                self.driver.execute_script("arguments[0].click();", btn)
+                time.sleep(1)
+                print(f"[Popup Closed] {xpath}")
+            except:
                 continue
 
+        # Also remove transparent backdrop blocking clicks
         try:
-            alert = self.driver.switch_to.alert
-            print(f"⚠️ Alert: {alert.text}")
-            alert.accept()
-            return True
-        except NoAlertPresentException:
+            self.driver.execute_script("""
+                const backdrops = document.querySelectorAll('.cdk-overlay-backdrop');
+                backdrops.forEach(b => b.style.display = 'none');
+            """)
+        except:
             pass
-        return False
+
+        return True
 
     # -----------------------------------------------------------
     # ✔ UPDATED METHOD — robust for GitHub Actions + Xvfb
     # -----------------------------------------------------------
     def enter_from_city(self, short_code, full_name):
+
         self.handle_popups()
 
-        # Try multiple locator fallbacks (IRCTC changes attributes in CI)
+        # Remove Angular overlays
+        self.driver.execute_script("""
+            const backdrops = document.querySelectorAll('.cdk-overlay-backdrop');
+            backdrops.forEach(b => b.style.display = 'none');
+        """)
+
         fallback_locators = [
             "//input[@aria-controls='pr_id_1_list']",
             "//input[contains(@placeholder,'From')]",
