@@ -1,10 +1,9 @@
-import pytest
-import time
-from Utilities.excel_reader import ExcelReader
-from Utilities.screenshot_helper import take_screenshot
-import os
-import allure
+# capstone-irctc/Pages/irctc_search_page.py
 
+import time
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoAlertPresentException
 
 class IRCTCSearchPage:
     def __init__(self, driver, wait):
