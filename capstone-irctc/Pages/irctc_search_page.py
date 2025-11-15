@@ -35,19 +35,61 @@ class IRCTCSearchPage:
             pass
         return False
 
+    # -----------------------------------------------------------
+    # ✔ UPDATED METHOD — robust for GitHub Actions + Xvfb
+    # -----------------------------------------------------------
     def enter_from_city(self, short_code, full_name):
         self.handle_popups()
-        field = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@aria-controls='pr_id_1_list']")))
-        field.click()
-        field.clear()
-        field.send_keys(short_code)
-        time.sleep(1)
-        options = self.driver.find_elements(By.XPATH, "//ul[@id='pr_id_1_list']/li/span")
+
+        # Try multiple locator fallbacks (IRCTC changes attributes in CI)
+        fallback_locators = [
+            "//input[@aria-controls='pr_id_1_list']",
+            "//input[contains(@placeholder,'From')]",
+            "//input[contains(@aria-label,'From')]",
+            "//input[@type='text' and contains(@class,'ui-inputtext')]",
+        ]
+
+        field = None
+        for xpath in fallback_locators:
+            try:
+                field = self.wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+                # bring into view
+                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", field)
+                time.sleep(0.5)
+                break
+            except:
+                field = None
+                continue
+
+        if not field:
+            # DEBUG: capture page source for analysis
+            with open("/tmp/irctc_debug_from_input.html", "w", encoding="utf-8") as f:
+                f.write(self.driver.page_source)
+            self.driver.save_screenshot("/tmp/irctc_debug_from_input.png")
+            raise TimeoutException("From city input field not found in CI environment.")
+
+        # Type short code
+        try:
+            field.click()
+            field.clear()
+            field.send_keys(short_code)
+            time.sleep(2)
+        except:
+            # fallback send via JS
+            self.driver.execute_script("""
+                arguments[0].value = arguments[1];
+                arguments[0].dispatchEvent(new Event('input', {bubbles:true}));
+            """, field, short_code)
+            time.sleep(2)
+
+        # Select option
+        options = self.driver.find_elements(By.XPATH, "//ul[contains(@id,'pr_id')]/li/span")
         for opt in options:
             if full_name in opt.text:
                 opt.click()
                 print(f" From city selected: {opt.text}")
                 break
+
         self.handle_popups()
 
     def enter_to_city(self, short_code, full_name):
